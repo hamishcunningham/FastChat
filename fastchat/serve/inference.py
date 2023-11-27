@@ -41,6 +41,11 @@ from fastchat.modules.exllama import ExllamaConfig
 from fastchat.modules.xfastertransformer import XftConfig
 from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
 
+global current_model, current_tokenizer, current_conv
+current_model = current_tokenizer = current_conv = None
+def get_current_model():        return current_model
+def get_current_tokenizer():    return current_tokenizer
+def get_current_conv():         return current_conv
 
 def prepare_logits_processor(
     temperature: float, repetition_penalty: float, top_p: float, top_k: int
@@ -357,6 +362,8 @@ def chat_loop(
     debug: bool = True,
     history: bool = True,
 ):
+    global current_model, current_tokenizer, current_conv
+
     # Model
     model, tokenizer = load_model(
         model_path,
@@ -373,6 +380,8 @@ def chat_loop(
         revision=revision,
         debug=debug,
     )
+    current_model = model
+    current_tokenizer = tokenizer
     generate_stream_func = get_generate_stream_function(model, model_path)
 
     model_type = str(type(model)).lower()
@@ -410,6 +419,7 @@ def chat_loop(
     while True:
         if not history or not conv:
             conv = new_chat()
+        current_conv = conv
 
         try:
             inp = chatio.prompt_for_input(conv.roles[0])
